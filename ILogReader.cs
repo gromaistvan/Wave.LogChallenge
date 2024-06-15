@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Wave.LogChallenge;
@@ -11,7 +12,7 @@ namespace Wave.LogChallenge;
 /// – Notice that the 8th column contains a person’s name. Create an array with each first name. Identify the most common first name in
 ///   the data and how many times it occurs.
 /// </summary>
-public interface ILogReader
+public interface IAsyncLogReader
 {
-    Task<(long lines, string firstName, string secoundName, string eachMonth, string commonName)> ReadAsync(CancellationToken token = default);
+    Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal> progress, CancellationToken token = default);
 }
