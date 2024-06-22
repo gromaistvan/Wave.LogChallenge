@@ -46,7 +46,7 @@ internal sealed class ByteLogReader(string fileName, int bufferSize = 1_000_000)
         if (start > 0) yield return buffer.AsMemory(0, start);
     }
 
-    public async Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal> progress, CancellationToken token = default)
+    public async Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal>? progress = null, CancellationToken token = default)
     {
         var monthsList = new long[12];
         var namesDict = new Dictionary<string, long>();
@@ -54,7 +54,7 @@ internal sealed class ByteLogReader(string fileName, int bufferSize = 1_000_000)
         string commonName = "", firstName = "", secondName = "";
         var lines = 0L;
         var state = 0m;
-        progress.Report(state / _size);
+        progress?.Report(state / _size);
         await foreach (ReadOnlyMemory<byte> line in ReadLineAsync(token))
         {
             lines++;
@@ -88,10 +88,10 @@ internal sealed class ByteLogReader(string fileName, int bufferSize = 1_000_000)
             state += line.Length + 1;
             if (lines % 100_000L == 0L)
             {
-                progress.Report(state / _size);
+                progress?.Report(state / _size);
             }
         }
-        progress.Report(state / _size);
+        progress?.Report(state / _size);
         return (lines, firstName, secondName, string.Join(',', monthsList), commonName);
 
         static void FindPos(ReadOnlySpan<byte> text, ref int start, int count)

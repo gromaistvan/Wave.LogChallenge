@@ -14,7 +14,7 @@ internal sealed class SuperFastLogReader(string fileName, int bufferSize = 1_000
 
     private readonly long _size = new FileInfo(fileName).Length;
 
-    public async Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal> progress, CancellationToken token = default)
+    public async Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal>? progress = null, CancellationToken token = default)
     {
         var buffer = new byte[bufferSize];
         var monthsList = new long[12];
@@ -54,7 +54,7 @@ internal sealed class SuperFastLogReader(string fileName, int bufferSize = 1_000
         var lines = 1L;
         int pos = 0, column = 0, nameStart = 0;
         var state = 0m;
-        progress.Report(state / _size);
+        progress?.Report(state / _size);
         for (int start = 0, count = await stream.ReadAsync(buffer.AsMemory(0, bufferSize), token);
              count > 0 && ! token.IsCancellationRequested;
              count = await stream.ReadAsync(buffer.AsMemory(start, bufferSize - start), token))
@@ -112,7 +112,7 @@ internal sealed class SuperFastLogReader(string fileName, int bufferSize = 1_000
                 }
             }
             state += end;
-            progress.Report(state / _size);
+            progress?.Report(state / _size);
             if (last) break;
             Array.Copy(buffer, end, buffer, 0, start = start + count - end);
         }
@@ -120,7 +120,7 @@ internal sealed class SuperFastLogReader(string fileName, int bufferSize = 1_000
         return (lines, firstName, secondName, string.Join(',', monthsList), await namesWorker);
     }
 
-    public (long lines, string firstName, string secondName, string eachMonth, string commonName) Read(IProgress<decimal> progress)
+    public (long lines, string firstName, string secondName, string eachMonth, string commonName) Read(IProgress<decimal>? progress = null)
     {
         var buffer = new byte[bufferSize];
         var monthsList = new long[12];
@@ -139,7 +139,7 @@ internal sealed class SuperFastLogReader(string fileName, int bufferSize = 1_000
         var lines = 1L;
         int pos = 0, column = 0, nameStart = 0;
         var state = 0m;
-        progress.Report(state / _size);
+        progress?.Report(state / _size);
         for (int start = 0, count = stream.Read(buffer, 0, bufferSize);
              count > 0;
              count = stream.Read(buffer, start, bufferSize - start))
@@ -209,7 +209,7 @@ internal sealed class SuperFastLogReader(string fileName, int bufferSize = 1_000
                 }
             }
             state += end;
-            progress.Report(state / _size);
+            progress?.Report(state / _size);
             if (last) break;
             Array.Copy(buffer, end, buffer, 0, start = start + count - end);
         }

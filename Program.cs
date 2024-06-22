@@ -3,9 +3,13 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using BenchmarkDotNet.Running;
 using static System.Console;
 using Wave.LogChallenge;
 using Wave.LogChallenge.Implementations;
+
+BenchmarkRunner.Run<LogBenchmarks>();
+return;
 
 try
 {
@@ -17,13 +21,12 @@ try
         e.Cancel = true;
     };
     await RunAsync(new CharLogReader("itcont.txt"), source.Token);
+    await RunAsync(new FastCharLogReader("itcont.txt"), source.Token);
     await RunAsync(new ByteLogReader("itcont.txt"), source.Token);
     await RunAsync(new FastLogReader("itcont.txt"), source.Token);
     await RunAsync(new SuperFastLogReader("itcont.txt"), source.Token);
     await RunAsync(new SyncSuperFastLogReader("itcont.txt"), source.Token);
-#if DEBUG
     await WaitForKeyAsync(source.Token);
-#endif
 }
 catch (OperationCanceledException)
 { }
@@ -72,13 +75,15 @@ static async Task RunAsync(IAsyncLogReader logReader, CancellationToken token = 
     }
 }
 
-#if DEBUG
+
 static async Task WaitForKeyAsync(CancellationToken token = default)
 {
+    await Task.Yield();
+#if DEBUG
     while (! token.IsCancellationRequested && ! KeyAvailable)
     {
         await Task.Delay(TimeSpan.FromMilliseconds(1.0), token);
     }
     ReadKey(true);
-}
 #endif
+}
