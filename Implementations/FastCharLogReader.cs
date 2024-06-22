@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Wave.LogChallenge.Implementations;
 
-internal class CharLogReader(string fileName): IAsyncLogReader
+internal class FastCharLogReader(string fileName): IAsyncLogReader
 {
     private const char Separator = '|', Zero = '0';
 
@@ -36,33 +36,6 @@ internal class CharLogReader(string fileName): IAsyncLogReader
         while (await file.ReadLineAsync(token) is { } line)
         {
             lines++;
-            var start = 0;
-            FindPos(line, 4, ref start);
-            int idx = (line[start + 4] - Zero) * 10 + (line[start + 5] - Zero) - 1;
-            monthsList[idx]++;
-            FindPos(line, 3, ref start);
-            int from = start;
-            FindPos(line, 1, ref start);
-            int to = start - 1;
-            string name = line[from..to];
-            switch (lines)
-            {
-                case 432L:   firstName  = name; break;
-                case 43243L: secondName = name; break;
-            }
-            if (namesDict.TryGetValue(name, out long value))
-            {
-                namesDict[name] = ++value;
-                if (value > maxNameOccurrence)
-                {
-                    maxNameOccurrence = value;
-                    commonName = name;
-                }
-            }
-            else
-            {
-                namesDict.Add(name, 1L);
-            }
             state += line.Length + 1;
             if (lines % 100_000L == 0L)
             {
@@ -71,21 +44,5 @@ internal class CharLogReader(string fileName): IAsyncLogReader
         }
         progress?.Report(state / _size);
         return (lines, firstName, secondName, string.Join(',', monthsList), commonName);
-
-        static void FindPos(ReadOnlySpan<char> text, int count, ref int start)
-        {
-            for (var i = 0; i < count; i += 1)
-            {
-                var found = false;
-                for (int idx = start; idx < text.Length; idx += 1)
-                {
-                    if (text[idx] != Separator) continue;
-                    found = true;
-                    start = idx + 1;
-                    break;
-                }
-                if (! found) return;
-            }
-        }
     }
 }

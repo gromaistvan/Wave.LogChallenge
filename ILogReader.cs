@@ -14,5 +14,5 @@ namespace Wave.LogChallenge;
 /// </summary>
 public interface IAsyncLogReader
 {
-    Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal> progress, CancellationToken token = default);
+    Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal>? progress = null, CancellationToken token = default);
 }

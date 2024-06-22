@@ -40,7 +40,7 @@ internal sealed class FastLogReader(string fileName, int bufferSize = 1_000_000)
         }
     }
 
-    public async Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal> progress, CancellationToken token = default)
+    public async Task<(long lines, string firstName, string secondName, string eachMonth, string commonName)> ReadAsync(IProgress<decimal>? progress = null, CancellationToken token = default)
     {
         var monthsList = new long[12];
         var namesDict = new Dictionary<string, long>();
@@ -49,7 +49,7 @@ internal sealed class FastLogReader(string fileName, int bufferSize = 1_000_000)
         var lines = 0L;
         int column = 0, nameStart = 0;
         var state = 0m;
-        progress.Report(state / _size);
+        progress?.Report(state / _size);
         await foreach (ReadOnlyMemory<byte> chunk in ReadChunkAsync(token))
         {
             for (var i = 0; i < chunk.Length; ++i)
@@ -97,7 +97,7 @@ internal sealed class FastLogReader(string fileName, int bufferSize = 1_000_000)
                 }
             }
             state += chunk.Length;
-            progress.Report(state / _size);
+            progress?.Report(state / _size);
         }
         return (lines, firstName, secondName, string.Join(',', monthsList), commonName);
     }
