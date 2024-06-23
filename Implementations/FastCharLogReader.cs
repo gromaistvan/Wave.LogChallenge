@@ -12,11 +12,11 @@ namespace Wave.LogChallenge.Implementations;
 
 internal class FastCharLogReader(string fileName): IAsyncLogReader
 {
+    private const int ReportCnt = 500_000, ThreadCnt = 100;
+    
     private sealed class State
     {
-        private const char Separator = '|', Zero = '0';
-        
-        private readonly ConcurrentDictionary<string, long> _names = new();
+        private readonly ConcurrentDictionary<string, long> _names = new(concurrencyLevel: ThreadCnt, capacity: 100_000, comparer: StringComparer.Ordinal);
         
         private readonly long[] _months = new long[12];
 
@@ -26,14 +26,15 @@ internal class FastCharLogReader(string fileName): IAsyncLogReader
 
         private void ProcessLineCore(ReadOnlySpan<char> line, long count)
         {
+            const char separator = '|', zero = '0';
             int column = 0, nameStart = 0;
             for (var i = 0; i < line.Length; ++i)
             {
-                if (line[i] != Separator) continue;
+                if (line[i] != separator) continue;
                 switch (++column)
                 {
                     case 4:
-                        ref long pos = ref _months[(line[i + 5] - Zero) * 10 + (line[i + 6] - Zero) - 1];
+                        ref long pos = ref _months[(line[i + 5] - zero) * 10 + (line[i + 6] - zero) - 1];
                         Interlocked.Increment(ref pos);
                         i += 19;
                         ++column;
@@ -63,23 +64,15 @@ internal class FastCharLogReader(string fileName): IAsyncLogReader
             throw new ArgumentException("Not enough columns!", nameof(line));
         }
 
-        public void ProcessLine(string line)
-        {
-            long count = Interlocked.Increment(ref _lines);
-            ProcessLineCore(line, count);
-        }
-        
-        public Task ProcessLineAsync(string line, CancellationToken token = default)
-        {
-            long count = Interlocked.Increment(ref _lines);
-            return Task.Run(() => ProcessLineCore(line, count), token);
-        }
+        public void ProcessLine(string line) =>
+            ProcessLineCore(line, ++_lines);
+
+        public Task ProcessLineAsync(string line, CancellationToken token = default) =>
+            Task.Run(() => ProcessLineCore(line, Interlocked.Increment(ref _lines)), token);
 
         public void Deconstruct(out long lines, out string firstName, out string secondName, out string eachMonth, out string commonName) =>
             (lines, firstName, secondName, eachMonth, commonName) = (_lines, _firstName, _secondName, string.Join(',', _months), _commonName);
     }
-
-    private const int ReportCnt = 500_000;
     
     private readonly long _size = new FileInfo(fileName).Length;
     
@@ -114,7 +107,7 @@ internal class FastCharLogReader(string fileName): IAsyncLogReader
             Encoding.ASCII,
             detectEncodingFromByteOrderMarks: false,
             new FileStreamOptions { Mode = Open, Access = FileAccess.Read, Share = FileShare.Read, Options = Asynchronous | SequentialScan });
-        (var idx, Task[] process) = (0, Enumerable.Repeat(Task.CompletedTask, 100).ToArray());
+        var (idx, process) = (0, Enumerable.Repeat(Task.CompletedTask, ThreadCnt).ToArray());
         State state = new();
         progress?.Report(0m);
         (var pos, int cnt) = (0m, ReportCnt);
