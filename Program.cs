@@ -8,8 +8,8 @@ using static System.Console;
 using Wave.LogChallenge;
 using Wave.LogChallenge.Implementations;
 
-BenchmarkRunner.Run<LogBenchmarks>();
-return;
+//BenchmarkRunner.Run<LogBenchmarks>(null, args);
+//return;
 
 try
 {
@@ -20,12 +20,14 @@ try
         source.Cancel();
         e.Cancel = true;
     };
-    await RunAsync(new CharLogReader("itcont.txt"), source.Token);
-    await RunAsync(new FastCharLogReader("itcont.txt"), source.Token);
-    await RunAsync(new ByteLogReader("itcont.txt"), source.Token);
-    await RunAsync(new FastLogReader("itcont.txt"), source.Token);
-    await RunAsync(new SuperFastLogReader("itcont.txt"), source.Token);
-    await RunAsync(new SyncSuperFastLogReader("itcont.txt"), source.Token);
+    const string fileName = "itcont.txt";
+    await RunAsync(new CharLogReader(fileName), source.Token);
+    await RunAsync(new FastCharLogReader(fileName), source.Token);
+    return;
+    await RunAsync(new ByteLogReader(fileName), source.Token);
+    await RunAsync(new FastLogReader(fileName), source.Token);
+    await RunAsync(new SuperFastLogReader(fileName), source.Token);
+    await RunAsync(new SyncSuperFastLogReader(fileName), source.Token);
     await WaitForKeyAsync(source.Token);
 }
 catch (OperationCanceledException)
